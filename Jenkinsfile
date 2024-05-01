@@ -10,7 +10,7 @@ pipeline {
     environment {
         registry = "kubeimran/vproappdock"
         registryCredential = 'dockerhub'
-        ARTVERSION = "${env.BUILD_ID}"
+
     }
 
     stages{
@@ -83,7 +83,7 @@ pipeline {
         stage('Upload Image'){
             steps{
                 script {
-                    docker.withRegistry('', registryCredential){
+                    docker.withRegistry('', registryCredential) {
                         dockerImage.push("V$BUILD_NUMBER")
                         dockerImage.push('latest')
                     }
@@ -91,6 +91,13 @@ pipeline {
             }
         }
         stage('Remove Unused docker Image') {
+            steps{
+                sh "docker rmi $registry:V$BUILD_NUMBER"
+            }
+        }
+
+
+        stage('kubernetes Deploy'){
             agent {label 'KOPS'}
                 steps {
                     sh "helm upgrade --install --force vprofile-stack helm/vprofilecharts --set appimage=${registry}:V${BUILD_NUMBER} --namespace prod"
